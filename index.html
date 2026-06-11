@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dividend Compounding Calculator</title>
+<meta name="description" content="Model reinvested dividends over time: portfolio value, total dividends, and yield on cost with a DRIP toggle. Runs in the browser. Not financial advice.">
+<meta property="og:title" content="Dividend Compounding Calculator">
+<meta property="og:description" content="Reinvested dividends, contributions, and growth compounded over years. Yield on cost included. Not financial advice.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Spectral:wght@400;500;600&family=Cutive+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f4efe2;
+    --paper-2: #efe8d6;
+    --ink: #1f2a24;
+    --ink-soft: #5a6b5f;
+    --green: #1d5b43;
+    --green-deep: #123a2b;
+    --gold: #9a7b25;
+    --gold-bright: #c39b34;
+    --carmine: #8c2f2a;
+    --edge: #cdbf9c;
+    --shadow: rgba(31, 42, 36, 0.16);
+  }
+  [data-theme="dark"] {
+    --paper: #131a15;
+    --paper-2: #18211a;
+    --ink: #e7e0cc;
+    --ink-soft: #9aaa9c;
+    --green: #4fae84;
+    --green-deep: #2f6f53;
+    --gold: #c9a544;
+    --gold-bright: #e0bb56;
+    --carmine: #d2716a;
+    --edge: #33402f;
+    --shadow: rgba(0, 0, 0, 0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Spectral", serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.55;
+    min-height: 100vh;
+    padding: 28px 16px 64px;
+  }
+  .frame {
+    max-width: 1020px;
+    margin: 0 auto;
+    border: 2px solid var(--green-deep);
+    box-shadow: 0 0 0 5px var(--paper), 0 0 0 6px var(--gold), 8px 8px 0 var(--shadow);
+    background: var(--paper);
+    padding: 28px;
+  }
+  @media (max-width: 600px) { .frame { padding: 18px; } }
+  header.top {
+    text-align: center;
+    border-bottom: 1px solid var(--edge);
+    padding-bottom: 18px;
+    position: relative;
+  }
+  header.top h1 {
+    font-family: "Playfair Display", serif;
+    font-weight: 800;
+    font-size: clamp(26px, 5.5vw, 46px);
+    color: var(--green-deep);
+    letter-spacing: 0.01em;
+  }
+  header.top .sub {
+    font-family: "Cutive Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-top: 8px;
+  }
+  .theme-toggle {
+    position: absolute; top: 0; right: 0;
+    font-family: "Cutive Mono", monospace;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--paper-2); color: var(--ink);
+    border: 1px solid var(--edge); padding: 7px 11px; cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--green); }
+  .disclaimer {
+    text-align: center;
+    font-family: "Cutive Mono", monospace;
+    font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--carmine);
+    border: 1px solid var(--carmine);
+    padding: 8px 12px; margin: 18px auto 24px; max-width: 760px;
+  }
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 26px; align-items: start; }
+  @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
+  h2.sec {
+    font-family: "Playfair Display", serif; font-weight: 600;
+    font-size: 18px; color: var(--green-deep);
+    border-bottom: 1px solid var(--edge); padding-bottom: 7px; margin-bottom: 16px;
+  }
+  .field { margin-bottom: 15px; }
+  .field label {
+    display: block; font-family: "Cutive Mono", monospace;
+    font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 5px;
+  }
+  .field input[type="number"] {
+    width: 100%; font-family: "Cutive Mono", monospace; font-size: 15px;
+    color: var(--ink); background: var(--paper-2);
+    border: 1px solid var(--edge); padding: 9px 10px;
+  }
+  .field input:focus { outline: 2px solid var(--green); outline-offset: -1px; }
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .toggle-row label { font-family: "Cutive Mono", monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
+  .switch { position: relative; width: 46px; height: 24px; flex: 0 0 auto; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; background: var(--edge); cursor: pointer; transition: 0.2s; border-radius: 24px;
+  }
+  .slider::before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px; background: var(--paper); transition: 0.2s; border-radius: 50%; }
+  .switch input:checked + .slider { background: var(--green); }
+  .switch input:checked + .slider::before { transform: translateX(22px); }
+  .chartcard { background: var(--paper-2); border: 1px solid var(--edge); padding: 18px; margin-bottom: 22px; }
+  svg { width: 100%; height: auto; display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; font-family: "Cutive Mono", monospace; font-size: 11px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 14px; height: 10px; display: inline-block; }
+  .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 620px) { .results { grid-template-columns: 1fr; } }
+  .stat { background: var(--paper-2); border: 1px solid var(--edge); padding: 15px 16px; }
+  .stat .k { font-family: "Cutive Mono", monospace; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .stat .v { font-family: "Playfair Display", serif; font-weight: 800; font-size: 28px; color: var(--green-deep); margin-top: 4px; }
+  [data-theme="dark"] .stat .v { color: var(--green); }
+  .stat .note { font-family: "Cutive Mono", monospace; font-size: 10.5px; color: var(--ink-soft); margin-top: 4px; }
+  footer {
+    margin-top: 32px; border-top: 1px solid var(--edge); padding-top: 16px;
+    font-family: "Cutive Mono", monospace; font-size: 11px; color: var(--ink-soft); line-height: 1.7;
+  }
+  footer a { color: var(--green); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="top">
+    <h1>Dividend Compounding Calculator</h1>
+    <div class="sub">Reinvest &middot; Contribute &middot; Compound</div>
+    <button class="theme-toggle" id="themeToggle" type="button">Dark</button>
+  </header>
+
+  <div class="disclaimer">Not financial advice. Assumes fixed rates that real dividends and prices never hold. For learning, not planning.</div>
+
+  <div class="layout">
+    <section aria-label="Inputs">
+      <h2 class="sec">Inputs</h2>
+      <div class="field"><label for="initial">Initial investment ($)</label><input type="number" id="initial" value="10000" min="0" step="100"></div>
+      <div class="field"><label for="monthly">Monthly contribution ($)</label><input type="number" id="monthly" value="200" min="0" step="25"></div>
+      <div class="field"><label for="yield">Starting dividend yield (%)</label><input type="number" id="yield" value="3.5" min="0" step="0.1"></div>
+      <div class="field"><label for="divgrowth">Annual dividend growth (%)</label><input type="number" id="divgrowth" value="6" step="0.5"></div>
+      <div class="field"><label for="appr">Annual price appreciation (%)</label><input type="number" id="appr" value="4" step="0.5"></div>
+      <div class="field"><label for="years">Horizon (years)</label><input type="number" id="years" value="25" min="1" max="60" step="1"></div>
+      <div class="toggle-row">
+        <span class="switch"><input type="checkbox" id="drip" checked><span class="slider"></span></span>
+        <label for="drip">Reinvest dividends (DRIP)</label>
+      </div>
+    </section>
+
+    <div>
+      <section class="chartcard">
+        <h2 class="sec">Portfolio value over time</h2>
+        <svg id="chart" viewBox="0 0 680 360" role="img" aria-label="Portfolio value split into contributions, dividends, and appreciation"></svg>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--ink-soft)"></i> Contributions</span>
+          <span><i class="swatch" style="background:var(--gold-bright)"></i> Dividends</span>
+          <span><i class="swatch" style="background:var(--green)"></i> Appreciation</span>
+        </div>
+      </section>
+
+      <section class="results" aria-label="Results">
+        <div class="stat"><div class="k">Final value</div><div class="v" id="finalVal">$0</div><div class="note" id="finalNote"></div></div>
+        <div class="stat"><div class="k">Total dividends</div><div class="v" id="divVal">$0</div><div class="note" id="divNote"></div></div>
+        <div class="stat"><div class="k">Yield on cost</div><div class="v" id="yocVal">0%</div><div class="note" id="yocNote"></div></div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <div>DIVIDEND COMPOUNDING CALCULATOR &middot; runs entirely in your browser &middot; no data leaves the page &middot; no tracking</div>
+    <div>Part of the 0xelitesystem tool set. See also: dca-visualizer, position-sizing-calculator.</div>
+    <div>MIT licensed. Copyright 0xelitesystem 2026. Educational tool, not investment advice.</div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function num(id) { return parseFloat($(id).value); }
+  function money(x) { if (!isFinite(x)) { return "$0"; } return "$" + Math.round(x).toLocaleString("en-US"); }
+
+  function compute() {
+    var initial = num("initial");
+    var monthly = num("monthly");
+    var yld = num("yield") / 100;
+    var divGrowth = num("divgrowth") / 100;
+    var appr = num("appr") / 100;
+    var years = Math.round(num("years"));
+    var drip = $("drip").checked;
+
+    if (!(initial >= 0) || !(monthly >= 0) || !(years >= 1)) { return null; }
+    if (years > 60) { years = 60; }
+
+    var p0 = 100;
+    var mAppr = Math.pow(1 + appr, 1 / 12) - 1;
+    var price = p0;
+    var shares = initial / p0;
+    var contributed = initial;
+    var dividendsCash = 0;
+    var dividendsTotal = 0;
+
+    var series = [];
+    var months = years * 12;
+    var m;
+    for (m = 1; m <= months; m++) {
+      price = price * (1 + mAppr);
+      if (monthly > 0) { shares += monthly / price; contributed += monthly; }
+
+      var yearIndex = Math.floor((m - 1) / 12);
+      var dpsAnnual = p0 * yld * Math.pow(1 + divGrowth, yearIndex);
+      var dividend = shares * (dpsAnnual / 12);
+      dividendsTotal += dividend;
+      if (drip) { shares += dividend / price; } else { dividendsCash += dividend; }
+
+      if (m % 12 === 0) {
+        var holdings = shares * price;
+        var apprPart = holdings - contributed + (drip ? 0 : 0);
+        series.push({
+          year: m / 12,
+          contributed: contributed,
+          dividends: drip ? (holdings - contributed > 0 ? Math.min(dividendsTotal, holdings - contributed) : 0) : dividendsCash,
+          total: holdings + dividendsCash
+        });
+      }
+    }
+
+    var finalPrice = price;
+    var holdingsFinal = shares * finalPrice + dividendsCash;
+    var endDpsAnnual = p0 * yld * Math.pow(1 + divGrowth, years - 1);
+    var annualIncomeEnd = shares * endDpsAnnual;
+    var yoc = contributed > 0 ? (annualIncomeEnd / contributed) * 100 : 0;
+
+    return {
+      series: series, years: years,
+      finalVal: holdingsFinal, contributed: contributed,
+      dividendsTotal: dividendsTotal, annualIncomeEnd: annualIncomeEnd,
+      yoc: yoc, drip: drip
+    };
+  }
+
+  function render(r) {
+    if (!r) { return; }
+    $("finalVal").textContent = money(r.finalVal);
+    $("finalNote").textContent = money(r.contributed) + " contributed";
+    $("divVal").textContent = money(r.dividendsTotal);
+    $("divNote").textContent = r.drip ? "reinvested along the way" : "taken as cash";
+    $("yocVal").textContent = r.yoc.toFixed(1) + "%";
+    $("yocNote").textContent = money(r.annualIncomeEnd) + " annual income at year " + r.years;
+    drawChart(r);
+  }
+
+  function drawChart(r) {
+    var W = 680, H = 360, padL = 58, padR = 16, padT = 16, padB = 32;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var s = r.series, n = s.length;
+    if (n === 0) { $("chart").innerHTML = ""; return; }
+
+    var maxV = 0, i;
+    for (i = 0; i < n; i++) { if (s[i].total > maxV) { maxV = s[i].total; } }
+    maxV = maxV * 1.08;
+
+    function x(yr) { return padL + ((yr - 0) / r.years) * plotW; }
+    function y(v) { return padT + plotH - (v / maxV) * plotH; }
+
+    function area(getTop, getBottom, fill) {
+      var d = "M" + x(s[0].year).toFixed(1) + " " + y(getTop(s[0])).toFixed(1) + " ";
+      var j;
+      for (j = 1; j < n; j++) { d += "L" + x(s[j].year).toFixed(1) + " " + y(getTop(s[j])).toFixed(1) + " "; }
+      for (j = n - 1; j >= 0; j--) { d += "L" + x(s[j].year).toFixed(1) + " " + y(getBottom(s[j])).toFixed(1) + " "; }
+      d += "Z";
+      return '<path d="' + d + '" fill="' + fill + '" stroke="none"/>';
+    }
+
+    var parts = [];
+    var gy;
+    for (gy = 0; gy <= 4; gy++) {
+      var yy = padT + (gy / 4) * plotH;
+      parts.push('<line x1="' + padL + '" y1="' + yy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yy.toFixed(1) + '" stroke="var(--edge)" stroke-width="1"/>');
+      parts.push('<text x="' + (padL - 8) + '" y="' + (yy + 4).toFixed(1) + '" text-anchor="end" font-family="Cutive Mono, monospace" font-size="9" fill="var(--ink-soft)">' + money(maxV * (1 - gy / 4)) + '</text>');
+    }
+
+    parts.push(area(function (d) { return d.total; }, function () { return 0; }, "var(--green)"));
+    parts.push(area(function (d) { return d.contributed + d.dividends; }, function () { return 0; }, "var(--gold-bright)"));
+    parts.push(area(function (d) { return d.contributed; }, function () { return 0; }, "var(--ink-soft)"));
+
+    parts.push('<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (W - padR) + '" y2="' + (padT + plotH) + '" stroke="var(--ink)" stroke-width="1.5"/>');
+    parts.push('<text x="' + padL + '" y="' + (H - 8) + '" font-family="Cutive Mono, monospace" font-size="9" fill="var(--ink-soft)">year 1</text>');
+    parts.push('<text x="' + (W - padR) + '" y="' + (H - 8) + '" text-anchor="end" font-family="Cutive Mono, monospace" font-size="9" fill="var(--ink-soft)">year ' + r.years + '</text>');
+
+    $("chart").innerHTML = parts.join("");
+  }
+
+  function recompute() { render(compute()); }
+
+  function bind() {
+    var inputs = ["initial", "monthly", "yield", "divgrowth", "appr", "years"];
+    var i;
+    for (i = 0; i < inputs.length; i++) { $(inputs[i]).addEventListener("input", recompute); }
+    $("drip").addEventListener("change", recompute);
+
+    var t = $("themeToggle");
+    t.addEventListener("click", function () {
+      var dark = document.documentElement.getAttribute("data-theme") === "dark";
+      document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+      t.textContent = dark ? "Dark" : "Light";
+    });
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      t.textContent = "Light";
+    }
+  }
+
+  bind();
+  recompute();
+})();
+</script>
+</body>
+</html>
