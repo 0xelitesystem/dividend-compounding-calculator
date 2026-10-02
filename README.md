@@ -12,7 +12,7 @@ The Dividend Compounding Calculator simulates a dividend portfolio month by mont
 
 Yield on cost is the ending annual dividend income divided by everything you contributed. It shows how a modest starting yield can grow into a large income stream on the original money when dividends rise over time.
 
-## How to use it
+## Use
 
 1. Open `index.html` in a browser, or visit the GitHub Pages site.
 2. Enter the initial investment, monthly contribution, starting yield, annual dividend growth, annual price appreciation, and horizon in years.
@@ -35,9 +35,28 @@ Yield on cost is the ending annual dividend income divided by everything you con
 
 Price compounds monthly from appreciation. Dividend per share is based on the starting price times yield, stepped up each year by the growth rate, and paid monthly. With DRIP on, each dividend buys fractional shares at the current price. There are no taxes, fees, or dividend cuts. Rates are held constant, which is why the output should be read as a mechanic, not a forecast.
 
+## Why this exists
+
+Dividend compounding is easier to understand when you can change one input and watch the yield on cost move. This puts the whole month-by-month model in a single HTML file with no tracking and no signup, under the MIT license, so the math is open to read.
+
 ## Privacy
 
 Runs fully client side. No analytics, no network calls, no storage.
+
+The one exception: if you use the theme toggle, your light or dark choice is saved in your browser's localStorage under the key `theme`. Nothing you paste or type is stored.
+
+## Run locally
+
+```
+git clone https://github.com/0xelitesystem/dividend-compounding-calculator
+cd dividend-compounding-calculator
+```
+
+Open `index.html` in a browser. Or serve the folder with `python -m http.server` and visit http://localhost:8000.
+
+## Build
+
+No build step. The whole tool is one `index.html` file with inline CSS and JavaScript, and no dependencies.
 
 ## Related tools
 
